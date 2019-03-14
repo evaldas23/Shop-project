@@ -2,35 +2,44 @@ import React from "react";
 import "./index.scss";
 
 class Login extends React.Component {
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.state ={
+    this.state = {
       username: null,
       password: null,
-    }
+    };
   }
 
   onLogin = () => {
-    const {username, password} =this.state;
-    const{history} = this.props;
+    const { username, password } = this.state;
+    const { history } = this.props;
 
-
-    if(username && password) {
-      history.replace('/favorites');
+    if (username && password) {
+      history.replace("/favorites");
     }
   };
 
-
-render (){
-  return (
-    <div className="Login">
-      <div className="Login--form">
-        <input onChange={e => this.setState({username: e.target.value})} type="text" placeholder="Your IRC Nick" />
-        <input onChange={e => this.setState({ password: e.target.value })} type="password" placeholder="Password" />
-        <button onClick={this.onLogin} type="button">Login</button>
+  render() {
+    return (
+      <div className="Login">
+        <div className="Login--form">
+          <input
+            onChange={e => this.setState({ username: e.target.value })}
+            type="text"
+            placeholder="Your IRC Nick"
+          />
+          <input
+            onChange={e => this.setState({ password: e.target.value })}
+            type="password"
+            placeholder="Password"
+          />
+          <button onClick={this.onLogin} type="button">
+            Login
+          </button>
+        </div>
       </div>
-    </div>
- );}
-
+    );
+  }
+}
 
 export default Login;
