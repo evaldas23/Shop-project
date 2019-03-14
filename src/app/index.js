@@ -1,7 +1,32 @@
 import React from "react";
+import { connect } from "react-redux";
 import { PacmanLoader } from "react-spinners";
-import { Shop, Favorites, Cart } from "./pages";
+import {
+  BrowserRouter as Router,
+  Route,
+  NavLink,
+  Redirect,
+  Switch,
+} from "react-router-dom";
+import { Shop, Favorites, Cart, PageNotFound } from "./pages";
 import { PageLayout } from "./components";
+
+function PrivateRoute({ allow, path, ...props }) {
+  if (allow) {
+    return <Route {...props} path={path} />;
+  }
+
+  return (
+    <Redirect
+      to={{
+        pathname: "/shop",
+        state: {
+          intendedLocation: path,
+        },
+      }}
+    />
+  );
+}
 
 class App extends React.Component {
   constructor(props) {
@@ -10,18 +35,18 @@ class App extends React.Component {
       products: [],
       error: null,
       loading: false,
-      route: "shop",
+      allow: true,
     };
 
     this.NAV_LINKS = ["shop", "cart", "favorites"].map(link => (
-      <button type="button" onClick={() => this.setState({ route: link })}>
-        {link}
-      </button>
+      <NavLink to={`/${link}`}>{link}</NavLink>
     ));
   }
 
   componentDidMount() {
-    this.setState({ loading: true });
+    const { getProducts, getProductsSuccess, getProductsFailure } = this.props;
+
+    getProducts();
     fetch("https://boiling-reaches-93648.herokuapp.com/food-shop/products")
       .then(response => response.json())
       .then(json => {
@@ -31,11 +56,9 @@ class App extends React.Component {
           cartCount: 0,
         }));
 
-        this.setState({ products, loading: false });
+        getProductsSuccess(products);
       })
-      .catch(() =>
-        this.setState({ error: "Something went wrong", loading: false })
-      );
+      .catch(() => getProductsFailure("Something went wrong"));
   }
 
   toggleFavorite = id => {
@@ -62,51 +85,68 @@ class App extends React.Component {
     }));
   };
 
-  renderRoute = () => {
-    const { route, products } = this.state;
+  login = (intended, history) => {
+    this.setState({ allow: true }, () => {
+      history.replace(intended || "/favorites");
+    });
+  };
 
-    switch (route) {
-      case "shop":
-        return (
-          <Shop
-            products={products}
-            toggleFavorite={this.toggleFavorite}
-            updateCartCount={this.updateCartCount}
-          />
-        );
-      case "favorites":
-        return (
-          <Favorites
-            products={products.filter(product => product.isFavorite)}
-            toggleFavorite={this.toggleFavorite}
-            updateCartCount={this.updateCartCount}
-          />
-        );
-      case "cart":
-        return (
-          <Cart products={products.filter(product => product.cartCount > 0)} />
-        );
-      default:
-        return (
-          <Shop
-            products={products}
-            toggleFavorite={this.toggleFavorite}
-            updateCartCount={this.updateCartCount}
-          />
-        );
-    }
+  logout = () => this.setState({ allow: false });
+
+  renderCart = () => {
+    const { products } = this.state;
+
+    return (
+      <Cart products={products.filter(product => product.cartCount > 0)} />
+    );
   };
 
   render() {
-    const { loading, error } = this.state;
+    const { allow } = this.state;
+    const { loading, error } = this.props;
+
     return (
-      <PageLayout navLinks={this.NAV_LINKS}>
-        {error && <span>{error}</span>}
-        {loading && <PacmanLoader />}
-        {this.renderRoute()}
-      </PageLayout>
+      <Router>
+        <PageLayout navLinks={this.NAV_LINKS}>
+          {error && <span>{error}</span>}
+          {loading && <PacmanLoader />}
+          <Switch>
+            <Route exact path="/favorites" component={Favorites} />
+            <PrivateRoute
+              allow={allow}
+              exact
+              path="/cart"
+              component={this.renderCart}
+            />
+            <Route exact path="/shop" component={Shop} />
+            <Route exact path="/404" component={PageNotFound} />
+            <Redirect exact from="/" to="/shop" />
+            <Redirect to="/404" />
+          </Switch>
+        </PageLayout>
+      </Router>
     );
   }
 }
 
-export default App;
+function mapStateToProps(state) {
+  return {
+    error: state.error,
+    loading: state.loading,
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    getProducts: () => dispatch({ type: "FETCH_PRODUCTS" }),
+    getProductsSuccess: payload =>
+      dispatch({ type: "FETCH_PRODUCTS_SUCCESS", payload }),
+    getProductsFailure: payload =>
+      dispatch({ type: "FETCH_PRODUCTS_FAILURE", payload }),
+  };
+}
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App);
