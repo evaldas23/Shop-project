@@ -9,35 +9,21 @@ import {
   Switch,
 } from "react-router-dom";
 import { Shop, Favorites, Cart, PageNotFound, Login } from "./pages";
-import { PageLayout } from "./components";
-
-function PrivateRoute({ allow, path, ...props }) {
-  if (allow) {
-    return <Route {...props} path={path} />;
-  }
-
-  return (
-    <Redirect
-      to={{
-        pathname: "/shop",
-        state: {
-          intendedLocation: path,
-        },
-      }}
-    />
-  );
-}
+import { PageLayout, PrivateRoute } from "./components";
+import auth from "../auth";
+import shop from "../shop";
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      allow: true,
-    };
 
-    this.NAV_LINKS = ["shop", "cart", "favorites"].map(link => (
-      <NavLink to={`/${link}`}>{link}</NavLink>
-    ));
+    this.NAV_LINKS = [
+      { title: "Logout", accessLevel: "onlyLogged", onClick: props.logout },
+      { title: "Login", accessLevel: "notLogged", to: "/login" },
+      { title: "Shop", to: "/shop" },
+      { title: "Cart", to: "/cart" },
+      { title: "Favorites", to: "/favorites", accessLevel: "onlyLogged" },
+    ];
   }
 
   componentDidMount() {
@@ -58,31 +44,51 @@ class App extends React.Component {
       .catch(() => getProductsFailure("Something went wrong"));
   }
 
-  login = (intended, history) => {
-    this.setState({ allow: true }, () => {
-      history.replace(intended || "/favorites");
-    });
+  renderNav = () => {
+    const { isLogged } = this.props;
+
+    return this.NAV_LINKS.map(
+      ({ title, accessLevel = "always", to = "#", ...props }, i) => {
+        if (accessLevel === "onlyLogged" && isLogged) {
+          return (
+            <NavLink key={i} to={to} {...props}>
+              {title}
+            </NavLink>
+          );
+        }
+
+        if (accessLevel === "notLogged" && !isLogged) {
+          return (
+            <NavLink key={i} to={to} {...props}>
+              {title}
+            </NavLink>
+          );
+        }
+
+        if (accessLevel === "always") {
+          return (
+            <NavLink key={i} to={to} {...props}>
+              {title}
+            </NavLink>
+          );
+        }
+
+        return undefined;
+      }
+    ).filter(Boolean);
   };
 
-  logout = () => this.setState({ allow: false });
-
   render() {
-    const { allow } = this.state;
     const { loading, error } = this.props;
 
     return (
       <Router>
-        <PageLayout navLinks={this.NAV_LINKS}>
+        <PageLayout navLinks={this.renderNav()}>
           {error && <span>{error}</span>}
           {loading && <PacmanLoader />}
           <Switch>
             <Route exact path="/login" component={Login} />
-            <PrivateRoute
-              allow={allow}
-              exact
-              path="/favorites"
-              component={Favorites}
-            />
+            <PrivateRoute exact path="/favorites" component={Favorites} />
             <Route exact path="/cart" component={Cart} />
             <Route exact path="/shop" component={Shop} />
             <Route exact path="/404" component={PageNotFound} />
@@ -97,18 +103,20 @@ class App extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    error: state.error,
-    loading: state.loading,
+    error: state.shop.error,
+    loading: state.shop.loading,
+    isLogged: !!state.auth.token,
   };
 }
 
 function mapDispatchToProps(dispatch) {
   return {
-    getProducts: () => dispatch({ type: "FETCH_PRODUCTS" }),
+    getProducts: () => dispatch({ type: shop.types.FETCH_PRODUCTS }),
     getProductsSuccess: payload =>
-      dispatch({ type: "FETCH_PRODUCTS_SUCCESS", payload }),
+      dispatch({ type: shop.types.FETCH_PRODUCTS_SUCCESS, payload }),
     getProductsFailure: payload =>
-      dispatch({ type: "FETCH_PRODUCTS_FAILURE", payload }),
+      dispatch({ type: shop.types.FETCH_PRODUCTS_FAILURE, payload }),
+    logout: () => dispatch({ type: auth.types.LOGOUT }),
   };
 }
 

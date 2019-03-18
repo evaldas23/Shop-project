@@ -2,6 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import { ProductCard, ProductsContainer } from "../../components";
+// import shop from "../shop";
 
 function Favorites({ products, toggleFavorite, updateCartCount }) {
   return (
@@ -20,25 +21,15 @@ function Favorites({ products, toggleFavorite, updateCartCount }) {
 
 Favorites.propTypes = {
   products: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      image: PropTypes.string.isRequired,
-      currencySymbol: PropTypes.string.isRequired,
-      price: PropTypes.string.isRequired,
-      isFavorite: PropTypes.bool.isRequired,
-    })
-  ),
+    PropTypes.shape({ id: PropTypes.string.isRequired })
+  ).isRequired,
   toggleFavorite: PropTypes.func.isRequired,
   updateCartCount: PropTypes.func.isRequired,
 };
 
-Favorites.defaultProps = {
-  products: [],
-};
 function mapStateToProps(state) {
   return {
-    products: state.products.filter(product => product.isFavorite),
+    products: state.shop.products.filter(product => product.isFavorite),
   };
 }
 
