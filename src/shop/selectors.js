@@ -12,6 +12,6 @@ export const getFavoriteProducts = state => {
   return allProducts.filter(product => product.isFavorite);
 };
 
-export const isLoading state => state[NAME].loading;
-export const getError state => state[NAME].error;
+export const isLoading = state => state[NAME].loading;
+export const getError = state => state[NAME].error;
 ;
