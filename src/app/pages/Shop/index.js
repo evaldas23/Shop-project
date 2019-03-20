@@ -2,6 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import { ProductCard, ProductsContainer } from "../../components";
+import shop from "../../../shop";
 
 function Shop({ products, toggleFavorite, updateCartCount }) {
   return (
@@ -26,25 +27,19 @@ Shop.propTypes = {
   updateCartCount: PropTypes.func.isRequired,
 };
 
-function mapStateToProps(state) {
-  return {
-    products: state.shop.products,
-  };
-}
-
-function mapDispatchToProps(dispatch) {
-  return {
+const enhance = connect(
+  state => ({
+    products: shop.selectors.getProducts(state),
+  }),
+  dispatch => ({
     toggleFavorite: id =>
-      dispatch({ type: "TOGGLE_FAVORITE_PRODUCT", payload: id }),
+      dispatch({ type: shop.types.TOGGLE_FAVORITE_PRODUCT, payload: id }),
     updateCartCount: (id, count) =>
       dispatch({
-        type: "UPDATE_PRODUCT_CART_COUNT",
+        type: shop.types.UPDATE_PRODUCT_CART_COUNT,
         payload: { id, count },
       }),
-  };
-}
+  })
+);
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Shop);
+export default enhance(Shop);

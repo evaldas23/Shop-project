@@ -1,5 +1,5 @@
 import { toggleFavoriteById, updateCartCountById } from "./utils";
-import * as types from "./actionTypes"
+import * as types from "./actionTypes";
 
 const DEFAULT_STATE = {
   products: [],

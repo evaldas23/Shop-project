@@ -8,6 +8,7 @@ import {
   Redirect,
   Switch,
 } from "react-router-dom";
+
 import { Shop, Favorites, Cart, PageNotFound, Login } from "./pages";
 import { PageLayout, PrivateRoute } from "./components";
 import auth from "../auth";
@@ -16,6 +17,8 @@ import shop from "../shop";
 class App extends React.Component {
   constructor(props) {
     super(props);
+
+    console.log("HIIIII", shop);
 
     this.NAV_LINKS = [
       { title: "Logout", accessLevel: "onlyLogged", onClick: props.logout },
@@ -101,26 +104,20 @@ class App extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
-  return {
-    error: state.shop.error,
-    loading: state.shop.loading,
-    isLogged: !!state.auth.token,
-  };
-}
-
-function mapDispatchToProps(dispatch) {
-  return {
+const enhance = connect(
+  state => ({
+    error: shop.selectors.getError(state),
+    loading: shop.selectors.isLoading(state),
+    isLogged: auth.selectors.isLogged(state),
+  }),
+  dispatch => ({
     getProducts: () => dispatch({ type: shop.types.FETCH_PRODUCTS }),
     getProductsSuccess: payload =>
       dispatch({ type: shop.types.FETCH_PRODUCTS_SUCCESS, payload }),
     getProductsFailure: payload =>
       dispatch({ type: shop.types.FETCH_PRODUCTS_FAILURE, payload }),
     logout: () => dispatch({ type: auth.types.LOGOUT }),
-  };
-}
+  })
+);
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(App);
+export default enhance(App);
